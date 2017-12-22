@@ -1,0 +1,177 @@
+---
+title: 'ISLR - Chapter 3 Linear Regression: Applied Q8,Q9: SLR & MLR'
+author: "Chee Loong Lian"
+date: "12/7/2017"
+output: html_document
+---
+
+**Data Explanation**
+
+Origin: The dataset was used in the 1983 American Statistical Association Exposition.
+
+Description: Gas mileage, horsepower, and other information for 392 vehicles.
+
+Format: A data frame with 392 observations on the following 9 variables.
+
+1. *mpg: miles per gallon*
+2. *cylinders: Number of cylinders between 4 and 8*
+3. *displacement: Engine displacement (cu. inches)*
+4. *horsepower: Engine horsepower*
+5. *weight: Vehicle weight (lbs.)*
+6. *acceleration: Time to accelerate from 0 to 60 mph (sec.)*
+7. *year: Model year (modulo 100)*
+8. *origin: Origin of car (1. American, 2. European, 3. Japanese)*
+9. *name: Vehicle name*
+
+**Q8(a) Simple Linear Regression on the "Auto" data set**
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+library(MASS); library(ISLR)
+head(Auto)
+attach(Auto)
+```
+
+**(i) Is there a relationship between the predictor and the response?**
+```{r}
+lm.fit <- lm(mpg ~ horsepower, data = Auto)
+summary(lm.fit)
+```
+Yes, there is a relationship between horsepower and mpg as determined by testing the null hypothesis of all regression coefficients equal to zero. Since the F-statistic (599.7) is far larger than 1 and the p-value (2.2e-16) of the F-statistic is close to zero we can reject the null hypothesis and state there is a statistically significant relationship between horsepower and mpg.
+
+**(ii) How strong is the relationship between the predictor and the response ?**
+
+```{r}
+mean(mpg)
+(4.906/23.446)*100
+```
+
+To calculate the residual error relative to the response we use the mean of the response and the RSE. The mean of mpg is <span style="color:red">23.4459</span>. The RSE of the lm.fit was <span style="color:red">4.906</span> which indicates a percentage error of <span style="color:red">20.9248%</span>. The R-squared of the lm.fit was about <span style="color:red">0.6059</span>, meaning 60.5948% of the variance in mpg is explained by horsepower.
+
+**(iii) Is the relationship between the predictor and the response positive or negative ?**
+
+The relationship between mpg and horsepower is negative. The more horsepower an automobile has the linear regression indicates the less mpg fuel efficiency the automobile will have.
+
+**(iv) What is the predicted mpg associated with a “horsepower” of 98 ? What are the associated 95% confidence and prediction intervals ?**
+```{r}
+predict(lm.fit, data.frame(horsepower = 98), interval = "confidence") 
+predict(lm.fit, data.frame(horsepower = 98), interval = "prediction") 
+```
+
+The predicted mpg associated with a "horsepower" of 98 is about <span style="color:red">24.47</span>. 
+
+We are 95% confident that the average mpg of a car with horsepower of 98 is between <span style="color:red">23.97</span> to <span style="color:red">24.96</span>.
+
+We are 95% confident that the mpg of a car with horsepower of 98 is between <span style="color:red">14.81</span> to <span style="color:red">34.12</span>.
+
+**Q8(b) Plot the response and the predictor, display the least squares regression line.**
+```{r, echo=TRUE}
+plot(horsepower, mpg, main = "Scatterplot of mpg vs. horsepower", xlab = "horsepower", ylab = "mpg", col = "blue")
+abline(lm.fit, lwd = 3, col = "magenta")
+```
+
+**Q8(c) Produce diagnostic plots of the least squares regression fit. Comment.**
+```{r, echo=TRUE}
+par(mfrow = c(2,2))
+plot(lm.fit)
+```
+
+The plot of residuals versus fitted values indicates the presence of non linearity in the data. The plot of standardized residuals versus leverage indicates the presence of a few outliers (higher than 2 or lower than -2) and a few high leverage points.
+
+**Q9(a) Multiple Linear Regression on the Auto data set**
+```{r}
+pairs(Auto)
+```
+
+**Q9(b) Compute matrix of correlations between the variables. Exclude "name" variable which is qualitative.**
+```{r}
+names(Auto)
+cor(Auto[1:8])
+```
+
+**Q9(c) Perform a multiple linear regression with “mpg” as the response and all other variables except “name” as the predictors.**
+
+**(i) Is there a relationship between the predictors and the response ?**
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+lm.fit2 <- lm(mpg ~ . - name, data = Auto)
+summary(lm.fit2)
+```
+
+Testing the hypothesis $H_0 : \beta_i = 0\ \forall i$. The p-value corresponding to the F-statistic is `r as.numeric(pf(summary(lm.fit2)$fstatistic[1], summary(lm.fit2)$fstatistic[2], summary(lm.fit2)$fstatistic[3], lower.tail = F))` this indicates a clear evidence of a relationship between “mpg” and the other predictors.
+
+**(ii) Which predictors appear to have a statistically significant relationship to the response ?**
+
+By checking the p-values associated with each predictor's t-statistic. We may conclude that "displacement", "weight", "year", and "origin" have  a statistically significant relationship while "cylinders", "horsepower" and "acceleration" do not.
+
+**(iii) What does the coefficient for the "year" variable suggest ?**
+
+The coefficient ot the "year" variable suggests that the average effect of an increase of 1 year is an increase of `r summary(lm.fit2)$coef[7, 1]` in "mpg" (all other predictors remaining constant). In other words, cars become more fuel efficient every year by almost 1 mpg / year.
+
+**Q9(d) Produce diagnostic plots of the linear regression fit.**
+```{r}
+par(mfrow = c(2, 2))
+plot(lm.fit2)
+```
+
+As before, the plot of residuals versus fitted values indicates the presence of mild non linearity in the data. The plot of standardized residuals versus leverage indicates the presence of a few outliers (higher than 2 or lower than -2) and one high leverage point (point 14).
+
+**Q9(e) Fit linear regression models with interaction effects. Do any interactions appear to be statistically significant ?**
+
+```{r}
+lm.fit3 <- lm(mpg ~ cylinders * displacement+displacement * weight, data = Auto[, 1:8])
+summary(lm.fit3)
+```
+
+From the correlation matrix, I obtained the two highest correlated pairs and used them in picking my interaction effects. From the p-values, we can see that the interaction between displacement and weight is statistically signifcant, while the interactiion between cylinders and displacement is not.
+
+**Q9(f) Try a few different transformations of the variables, such as $\log{X}$, $\sqrt{X}$, $X^2$. Comment on your findings.**
+
+```{r}
+lm.fit3 = lm(mpg~log(weight)+sqrt(horsepower)+acceleration+I(acceleration^2))
+summary(lm.fit3)
+```
+
+Apparently, from the p-values, the log(weight), sqrt(horsepower), and acceleration^2 all have statistical significance of some sort.
+
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm.fit3)
+par(mfrow=c(1,1))
+plot(predict(lm.fit3), rstudent(lm.fit3), col = "navy")
+```
+
+The residuals plot has less of a discernible pattern than the plot of all linear regression terms. The studentized residuals displays potential outliers (>3). The leverage plot indicates more than three points with high leverage.
+
+However, 2 problems are observed from the above plots:
+
+1) the residuals vs fitted plot indicates heteroskedasticity (unconstant variance over mean) in the model. 
+2) The Q-Q plot indicates somewhat non-normality of the residuals.
+
+So, a better transformation need to be applied to our model. From the correlation matrix in 9a., displacement, horsepower and weight show a similar nonlinear pattern against our response mpg. This nonlinear pattern is very close to a log form. So in the next attempt, we use **`log(mpg)`** as our response variable.
+
+```{r}
+lm.fit4<-lm(log(mpg)~cylinders+displacement+horsepower+weight+acceleration+year+origin,data=Auto)
+summary(lm.fit4)
+par(mfrow=c(2,2)) 
+plot(lm.fit4)
+par(mfrow=c(1,1))
+plot(predict(lm.fit4),rstudent(lm.fit4), col = "navy")
+```
+
+**Q10(a) Fit MLR on the "Carseats" data set to predict "Sales" Using "Price", "Urban", "US"**
+```{r}
+library(ISLR)
+attach(Carseats)
+lm.fit = lm(Sales ~ Price + Urban + US)
+summary(lm.fit)
+```
+
+**(b) Provide an interpretation of each coefficient in the model.**
+
+* "Price" variable: The average effect of a price increase of 1 dollar is a decrease of `r abs(summary(lm.fit)$coef[2, 1]) * 1000` units in sales all other predictors remaining fixed.
+* "Urban" variable: On average the unit sales in urban location are `r abs(summary(lm.fit)$coef[3, 1]) * 1000` units less than in rural location all other predictors remaining fixed.
+* "US" variable: On average the unit sales in a US store are `r abs(summary(lm.fit)$coef[4, 1]) * 1000` units more than in a non US store all other predictors remaining fixed.
+
+**(c) Write out the model in equation form, being careful to handle the qualitative variables properly.**
+
+The model may be written as [Sales = `r summary(lm.fit3)$coef[1, 1]` + (`r summary(lm.fit3)$coef[2, 1]`)\times Price + (`r summary(lm.fit3)$coef[3, 1]`)\times Urban + (`r summary(lm.fit3)$coef[4, 1]`)\times US + \varepsilon] with $Urban = 1$ if the store is in an urban location and $0$ if not, and $US = 1$ if the store is in the US and $0$ if not.

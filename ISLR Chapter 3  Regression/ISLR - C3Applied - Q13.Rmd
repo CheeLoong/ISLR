@@ -1,0 +1,106 @@
+---
+title: "ISLR - C3Applied - Q13: SLR simulation"
+author: "Chee Loong Lian"
+date: "12/18/2017"
+output: html_document
+---
+
+
+**13(a) Using the rnorm() function, create a vector, "x", containing 100 observations drawn from a $N(0,1)$ distribution. This represents a feature, $X$. Make sure to use set.seed(1) prior to starting part (a) to ensure conistent results** 
+```{r}
+set.seed(1)
+x <- rnorm(100)
+```
+
+**(b) Using the rnorm() function, create a vector, "eps", containing 100 observations drawn from a $N(0, 0.25)$ distribution.**
+```{r}
+eps <- rnorm(100, sd = sqrt(0.25))
+```
+
+**(c) Using "x" and "eps", generate a vector "y" according to the model**
+\[Y = -1 + 0.5X + \varepsilon.\]
+**What is the length of the vector "y" ? What are the values of $\beta_0$ and $\beta_1$ in this linear model ?**
+
+```{r}
+y <- -1 + 0.5 * x + eps
+length(y)
+```
+
+The values of $\beta_0$ and $\beta_1$ are $-1$ and $0.5$ respectively.
+
+**(d) Create a scatterplot displaying the relationship between "x" and "y". Comment on what you observe.**
+```{r}
+plot(x, y)
+```
+
+The relationship between "x" and "y" looks linear with some noise introduced by the "eps" variable.
+
+**(e) Fit a least squares linear model to predict "y" using "x". Comment on the model obtained. How do $\hat{\beta}_0$ and $\hat{\beta}_1$ compare to $\beta_0$ and $\beta_1$ ?**
+```{r}
+lm.fit <- lm(y ~ x)
+summary(lm.fit)
+```
+
+*The values of $\hat{\beta}_0$ and $\hat{\beta}_1$ are pretty close to $\beta_0$ and $\beta_1$. The model has a large F-statistic with a near-zero p-value so the null hypothesis can be rejected.*
+
+**(f) Display the least squares line on the scatterplot obtained in (d). Draw the population regression line on the plot, in a different color. Use the legend() function to create an appropriate legend.**
+
+```{r}
+plot(x, y)
+abline(lm.fit, col = "red")
+abline(-1, 0.5, col = "blue")
+legend("topleft", c("lm.fit Least square", "Regression"), col = c("red", "blue"), lty = c(1, 1))
+```
+
+**(g) Now fit a polynomial regression model that predicts "y" using "x" and "x^2". Is there evidence that the quadratic term improves the model fit ? Explain your answer.**
+
+```{r}
+lm.fit2 <- lm(y ~ x + I(x^2))
+summary(lm.fit2)
+```
+
+The coefficient for "x^2" is not significant as its p-value is higher than 0.05. So there is not sufficient evidence that the quadratic term improves the model fit even though the $R^2$ is slightly higher and $RSE$ slightly lower than the linear model.
+
+(h) Repeat (a)-(f) after modifying the data generation process in such a way that there is less noise in the data. The initial model should remain the same. Describe your results.
+
+```{r}
+set.seed(1)
+eps <- rnorm(100, sd = 0.125)
+x <- rnorm(100)
+y <- -1 + 0.5 * x + eps
+plot(x, y)
+lm.fit3 <- lm(y ~ x)
+summary(lm.fit3)
+abline(lm.fit3, col = "red")
+abline(-1, 0.5, col = "blue")
+legend("topleft", c("lm.fit3 Least square", "Regression"), col = c("red", "blue"), lty = c(1, 1))
+```
+
+We reduced the noise by decreasing the variance of the normal distribution used to generate the error term $\varepsilon$. We may see that the coefficients are very close to the previous ones, but now, as the relationship is nearly linear, we have a much higher $R^2$ and much lower $RSE$. Moreover, the two lines overlap each other as we have very little noise.
+
+(i) Repeat (a)-(f) after modifying the data generation process in such a way that there is more noise in the data. The initial model should remain the same. Describe your results.
+
+```{r}
+set.seed(1)
+eps <- rnorm(100, sd = 0.5)
+x <- rnorm(100)
+y <- -1 + 0.5 * x + eps
+plot(x, y)
+lm.fit4 <- lm(y ~ x)
+summary(lm.fit4)
+abline(lm.fit4, col = "red")
+abline(-1, 0.5, col = "blue")
+legend("topleft", c("lm.fit4 Least square", "Regression"), col = c("red", "blue"), lty = c(1, 1))
+```
+
+We increased the noise by increasing the variance of the normal distribution used to generate the error term $\varepsilon$. We may see that the coefficients are again very close to the previous ones, but now, as the relationship is not quite linear, we have a much lower $R^2$ and much higher $RSE$. Moreover, the two lines are wider apart but are still really close to each other as we have a fairly large data set.
+
+**(j) What are the confidence intervals for $\beta_0$ and $\beta_1$ based on the original data set, the noisier data set, and the less noisy data set ? Comment on your results.**
+
+```{r}
+confint(lm.fit)
+confint(lm.fit3)
+confint(lm.fit4)
+```
+
+All intervals seem to be centered on approximately 0.5. As the noise increases, the confidence intervals widen. With less noise, there is more predictability in the data set.
