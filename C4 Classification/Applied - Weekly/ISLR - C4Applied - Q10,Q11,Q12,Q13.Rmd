@@ -1,0 +1,363 @@
+---
+title: 'ISLR - Chapter 4 Classification: Applied Exercises'
+author: "Chee Loong Lian"
+date: "23 December 2017"
+output: html_document
+---
+
+**Q10(a) Using the "Weekly" data set, it contains 1,089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010. Produce some numerical and graphical summaries of the "Weekly" data. Do there appear to be any patterns ?**
+
+```{r, warning=FALSE}
+library(ISLR)
+summary(Weekly)
+484/1089
+```
+
+The data shows 44.4% "Down" weekly returns and 55.6% "Up" weekly returns. No other patterns.
+
+```{r}
+cor(Weekly[, -9])
+```
+
+The only substantial positive correlation is between "Year" and "Volume". In addition, the correlations between the "lag" variables and today's returns are very low, it does not show any unusual patterns. 
+
+```{r}
+attach(Weekly)
+plot(Year, Volume)
+```
+
+When we plot "Year" against "Volume", there is an increasing trend from Year 1990 to 2008, and it started decreasing from Year 2009 to 2010. 
+
+**(b) Use the full data set to perform a logistic regression with "Direction" as the response and the five lag variables plus "Volume" as predictors. Use the summary function to print the results. Do any of the predictors appear to be statistically significant ? If so, which ones ?**
+
+```{r}
+glm.fit = glm(Direction ~ . -Today, data = Weekly, family = binomial)
+summary(glm.fit)$coef
+```
+
+It would seem that "Lag2" is the only predictor statistically significant as its p-value is less than 0.05.
+
+**(c) Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.**
+
+```{r}
+glm.probs = predict(glm.fit, Weekly, type = "response")
+glm.pred = rep("Down", 1089)
+glm.pred[glm.probs > .5] = "Up"
+table(glm.pred, Direction)
+```
+
+Using Logistic regression, we may conclude that the percentage of correct predictions on the training data is `r (56 + 558) / 1089 * 100`%. In other words, `r (1 - (56 + 558) / 1089) * 100`% is the training error rate, which is often overly optimistic. Because we are not concern with the training error rate but instead the test error rate. We could say for weeks when the market goes up, the model is right `r 558 / (558 + 47) * 100`% of the time. For weeks when the market goes down, the model is right only `r 56 / (56 + 428) * 100`% of the time.
+
+**(d) Now fit the logistic regression model using a training data period from 1990 to 2008, with “Lag2” as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 to 2010).**
+
+```{r}
+train = (Year < 2009)
+Weekly.2009.2010 = Weekly[!train,] 
+Direction.2009.2010 = Direction[!train] # test y
+
+glm.fit = glm(Direction ~ Lag2, data = Weekly, family = binomial, subset = train)
+summary(glm.fit)$coef
+
+glm.probs = predict(glm.fit, Weekly.2009.2010, type = "response")
+glm.pred = rep("Down", length(glm.probs))
+glm.pred[glm.probs > .5] = "Up"
+table(glm.pred, Direction.2009.2010)
+```
+
+Using Logistic regression, we may conclude that the percentage of correct predictions on the test data is `r (9 + 56) / 104 * 100`%. In other words, `r (1 - (9 + 56) / 104) * 100`% is the test error rate. We could also say for weeks when the market is going up, the model is right `r 56 / (56 + 5) * 100`% of the time. For weeks when the market goes down, the model is right about `r 9 / (9 + 34) * 100`% of the time.
+
+**(e) Repeat (d) using LDA.**
+
+```{r, warning=FALSE}
+library(MASS)
+lda.fit = lda(Direction ~ Lag2, data = Weekly, subset = train)
+lda.fit
+
+lda.pred = predict(lda.fit, Weekly.2009.2010)
+lda.class = lda.pred$class
+table(lda.class, Direction.2009.2010)
+```
+
+Using LDA, we may conclude that the percentage of correct predictions on the test data is `r (9 + 56) / 104 * 100`%. In other words, `r (1 - (9 + 56) / 104) * 100`% is the test error rate. We could also say for weeks when the market is going up, the model is right `r 56 / (56 + 5) * 100`% of the time. For weeks when the market goes down, the model is right about `r 9 / (9 + 34) * 100`% of the time.
+
+**(f) Repeat (d) using QDA.**
+
+```{r}
+qda.fit = qda(Direction ~ Lag2, data = Weekly, subset = train)
+qda.fit
+
+qda.pred = predict(qda.fit, Weekly.2009.2010)
+qda.class = qda.pred$class
+table(qda.class, Direction.2009.2010)
+```
+
+Using QDA, we may conclude that the percentage of correct predictions on the test data is `r (0 + 61) / 104 * 100`%. In other words, `r (1 - (0 + 61) / 104) * 100`% is the test error rate. We could also say for weeks when the market is going up, the model is right `r 61 / (61 + 0) * 100`% of the time. For weeks when the market goes down, the model is right about `r 0 / (0 + 43) * 100`% of the time.
+
+**(g) Repeat (d) using KNN with K = 1**
+
+```{r}
+library(class)
+train.X <- as.matrix(Lag2[train])
+test.X <- as.matrix(Lag2[!train])
+train.Direction = Direction[train]
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.Direction, k = 1)
+table(knn.pred, Direction.2009.2010)
+```
+
+Using KNN with k = 1, we may conclude that the percentage of correct predictions on the test data is `r (21 + 31) / 104 * 100`%. In other words, `r (1 - (21 + 31) / 104) * 100`% is the test error rate. We could also say for weeks when the market is going up, the model is right `r 31 / (30 + 31) * 100`% of the time. For weeks when the market goes down, the model is right about `r 21 / (21 + 22) * 100`% of the time.
+
+**(h) Which of these methods appears to provide the best results on this data ?**
+
+If we compare the overall test error rates, we see that logistic regression and LDA have the minimum error rates, followed by QDA and KNN with k = 1.
+
+
+
+**Q11(a) Develop a model to predict whether a given car gets high or low gas mileage based on the "Auto" data set. Create a binary variable, "mpg01", that contains a 1 if "mpg" contains a value above its median, and a 0 if "mpg" contains a value below its median. You can compute the median using the median() function. Note you may find it helpful to use the data.frame() function to create a single data set containing both "mpg01" and the other "Auto" variables.**
+
+```{r}
+attach(Auto)
+mpg01 = rep(0, length(mpg))
+mpg01[mpg > median(mpg)] = 1
+Auto = data.frame(Auto, mpg01)
+head(Auto)
+```
+
+
+**(b) Explore the data graphically in order to investigate the association between “mpg01” and the other features. Which of the other features seem most likely to be useful in predictiong “mpg01” ? Scatterplots and boxplots may be useful tools to answer this question. Describe your findings.**
+
+```{r}
+cor(Auto[, -9])
+pairs(Auto)
+boxplot(cylinders ~ mpg01, data = Auto, main = "Cylinders vs mpg01")
+boxplot(displacement ~ mpg01, data = Auto, main = "Displacement vs mpg01")
+boxplot(horsepower ~ mpg01, data = Auto, main = "Horsepower vs mpg01")
+boxplot(weight ~ mpg01, data = Auto, main = "Weight vs mpg01")
+boxplot(acceleration ~ mpg01, data = Auto, main = "Acceleration vs mpg01")
+boxplot(year ~ mpg01, data = Auto, main = "Year vs mpg01")
+```
+
+We may conclude that there exists some association between "mpg01" with the following 4 variables: "cylinders", "displacement", "horsepower" and "weight".
+
+**(c) Split the data into a training set and a test set.**
+
+```{r}
+train = (year%%2 == 0) # if the year is even 
+Auto.train = Auto[train, ]
+Auto.test = Auto[!train, ]
+mpg01.test = mpg01[!train]
+```
+
+**(d) Perform LDA on the training data in order to predict "mpg01" using the variables that seemed most associated with "mpg01" in (b). What is the test error of the model obtained ?**
+
+```{r}
+lda.fit = lda(mpg01 ~ cylinders + displacement + horsepower + weight, data = Auto, subset = train)
+lda.fit
+lda.pred = predict(lda.fit, Auto.test)
+lda.class = lda.pred$class
+table(lda.class, mpg01.test)
+mean(lda.class != mpg01.test)
+```
+
+We may conclude that we have a test error rate of `r mean(lda.class != mpg01.test) * 100`%.
+
+**(e) Perform QDA on the training data in order to predict “mpg01” using the variables that seemed most associated with “mpg01” in (b). What is the test error of the model obtained ?**
+
+```{r}
+qda.fit = qda(mpg01 ~ cylinders + displacement + horsepower + weight, data = Auto, subset = train)
+qda.fit
+qda.pred = predict(qda.fit, Auto.test)
+qda.class = qda.pred$class
+table(qda.class, mpg01.test)
+mean(qda.class != mpg01.test)
+```
+
+We may conclude that we have a test error rate of `r mean(qda.class != mpg01.test) * 100`%.
+
+**(f) Perform logistic regression on the training data in order to predict “mpg01” using the variables that seemed most associated with “mpg01” in (b). What is the test error of the model obtained ?**
+
+```{r}
+glm.fit = glm(mpg01 ~ cylinders + displacement + horsepower + weight, data = Auto, subset = train, family = binomial)
+summary(glm.fit)$coef
+glm.probs = predict(glm.fit, Auto.test, type = "response")
+glm.pred = rep(0, length(glm.probs))
+glm.pred[glm.probs > .5] = 1
+table(glm.pred, mpg01.test)
+mean(glm.pred != mpg01.test)
+```
+
+We may conclude that we have a test error rate of `r mean(glm.pred != mpg01.test) * 100`%.
+
+**(g) Perform KNN on the training data, with several values of KK, in order to predict “mpg01” using the variables that seemed most associated with “mpg01” in (b). What test errors do you obtain ? Which value of K seems to perform the best on this data set ?**
+
+```{r}
+train.X = cbind(cylinders, displacement, horsepower, weight)[train, ]
+test.X = cbind(cylinders, displacement, horsepower, weight)[!train, ]
+train.mpg01 = mpg01[train]
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.mpg01, k = 1)
+table(knn.pred, mpg01.test )
+mean(knn.pred != mpg01.test)
+```
+
+We may conclude that we have a test error rate of `r mean(knn.pred != mpg01.test) * 100`% for K = 1.
+
+```{r}
+knn.pred = knn(train.X, test.X, train.mpg01, k = 10)
+table(knn.pred, mpg01.test )
+mean(knn.pred != mpg01.test)
+```
+
+We may conclude that we have a test error rate of `r mean(knn.pred != mpg01.test) * 100`% for K = 10.
+
+```{r}
+knn.pred = knn(train.X, test.X, train.mpg01, k = 100)
+table(knn.pred, mpg01.test )
+mean(knn.pred != mpg01.test)
+```
+
+We may conclude that we have a test error rate of `r mean(knn.pred != mpg01.test) * 100`% for K = 100. a K value of 100 seems to perform the best.
+
+**Q12(a) Write a function, Power(), that prints out the result of raising 2 to the 3rd power. In other words, your function should compute $2^3$ and print out the results.**
+
+```{r}
+Power <- function() {
+    2^3
+}
+
+Power()
+```
+
+**(b) Create a new function, Power2(), that allows you to pass any two numbers, "x" and "a", and prints out the value of "x^a".**
+
+```{r}
+Power2 <- function(x, a) {
+        x^a
+}
+
+Power2(2, 5)
+```
+
+**(c) Using the Power2() function that you just wrote, compute $10^3$, $8^{17}$, and $131^3$.**
+
+```{r}
+Power2(10, 3)
+Power2(8, 17)
+Power2(131, 3)
+```
+
+**(d) Now create a new function, Power3(), that actually returns the result "x^a" as an R object, rather than simply printing it to the screen. That is, if you store the value "x^a" in an object called "result" within your function, then you can simply return() this result.**
+
+```{r}
+Power3 <- function(x, a) {
+        result <- x^a
+        return(result)
+}
+```
+
+**(e) Now using the Power3() function, create a plot of $f(x) = x^2$. The x-axis should display a range of integers from 1 to 10, and the y-axis should display $x^2$. Label the axes appropriately, and use an appropriate title for the figure. Consider displaying either the x-axis, the y-axis, or both on the log-scale.**
+
+```{r}
+x <- 1:10
+plot(x, Power3(x, 2), log = "xy", xlab = "log of x", ylab = "log of x^2", main = "Log of x^2 vs Log of x")
+```
+
+**(f) Create a function, PlotPower(), that allows you to create a plot of “x” against “x^a” for a fixed “a” and for a range of values of “x”.**
+
+```{r}
+PlotPower <- function(x, a){
+        plot(x, Power3(x, a))
+}
+
+PlotPower(1:10, 3)
+```
+
+**Q13(a) Using the “Boston” data set, fit classification models in order to predict whether a given suburb has a crime rate above or below the median. Explore the logistic regression, LDA, and KNN models using various subsets of the predictors. Describe your findings.**
+
+```{r}
+library(MASS)
+attach(Boston)
+crim01 <- rep(0, length(crim)) # create binary variable for "crim"
+crim01[crim > median(crim)] <- 1
+Boston <- data.frame(Boston, crim01)
+```
+
+```{r}
+train <- 1:(length(crim) / 2) # split first half of data to train set
+test <- (length(crim) / 2 + 1):length(crim)
+Boston.train <- Boston[train, ]
+Boston.test <- Boston[test, ]
+crim01.test <- crim01[test]
+```
+
+```{r}
+# logistic regression
+glm.fit <- glm(crim01 ~ . - crim01 - crim, data = Boston, family = binomial, subset = train)
+summary(glm.fit)
+glm.probs <- predict(glm.fit, Boston.test, type = "response")
+glm.pred <- rep(0, length(glm.probs))
+glm.pred[glm.probs > 0.5] <- 1
+table(glm.pred, crim01.test)
+mean(glm.pred != crim01.test)
+```
+
+We may conclude that, for this logistic regression, we have a test error rate of `r mean(glm.pred != crim01.test) * 100`%.
+
+```{r}
+# logistic regression (-chas -nox -tax)
+glm.fit <- glm(crim01 ~ . - crim01 - crim -chas -nox -tax, data = Boston, family = binomial, subset = train)
+summary(glm.fit)
+glm.probs <- predict(glm.fit, Boston.test, type = "response")
+glm.pred <- rep(0, length(glm.probs))
+glm.pred[glm.probs > 0.5] <- 1
+table(glm.pred, crim01.test)
+mean(glm.pred != crim01.test)
+```
+
+We may conclude that, for this logistic regression, we have a test error rate of `r mean(glm.pred != crim01.test) * 100`%.
+
+```{r}
+# LDA
+lda.fit <- lda(crim01 ~ . - crim01 - crim, data = Boston, subset = train)
+lda.pred <- predict(lda.fit, Boston.test)
+table(lda.pred$class, crim01.test)
+mean(lda.pred$class != crim01.test)
+```
+
+We may conclude that, for this LDA, we have a test error rate of `r mean(lda.pred$class != crim01.test) * 100`%.
+
+```{r}
+# LDA (-chas -nox -tax)
+lda.fit <- lda(crim01 ~ . - crim01 - crim - chas - nox - tax, data = Boston, subset = train)
+lda.pred <- predict(lda.fit, Boston.test)
+table(lda.pred$class, crim01.test)
+mean(lda.pred$class != crim01.test)
+```
+
+We may conclude that, for this LDA, we have a test error rate of `r mean(lda.pred$class != crim01.test) * 100`%.
+
+```{r}
+train.X <- cbind(zn, indus, chas, nox, rm, age, dis, rad, tax, ptratio, black, lstat, medv)[train, ]
+test.X <- cbind(zn, indus, chas, nox, rm, age, dis, rad, tax, ptratio, black, lstat, medv)[test, ]
+train.crim01 <- crim01[train]
+set.seed(1)
+knn.pred <- knn(train.X, test.X, train.crim01, k = 1)
+table(knn.pred, crim01.test)
+```
+
+We may conclude that, for this KNN ($k = 1$), we have a test error rate of `r mean(knn.pred != crim01.test) * 100`%.
+
+```{r}
+knn.pred <- knn(train.X, test.X, train.crim01, k = 10)
+table(knn.pred, crim01.test)
+```
+
+We may conclude that, for this KNN ($k = 10$), we have a test error rate of `r mean(knn.pred != crim01.test) * 100`%.
+
+```{r}
+knn.pred <- knn(train.X, test.X, train.crim01, k = 100)
+table(knn.pred, crim01.test)
+```
+
+We may conclude that, for this KNN ($k = 100$), we have a test error rate of `r mean(knn.pred != crim01.test) * 100`%. Proceed to picking the model with the lowest test error rate, but there are more exploration left to do. 
+

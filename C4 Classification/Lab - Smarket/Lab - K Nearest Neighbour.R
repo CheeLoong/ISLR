@@ -31,4 +31,3 @@ knn_test_error = mean(knn.pred != Direction.2005) # test error rate = 46.4%
 ## Summary
 summary = data.frame(logistic_test_error, lda_test_error, qda_test_error, knn_test_error)
 summary # QDA provides the best results of the methods that we have examined so far.
-

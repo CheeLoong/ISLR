@@ -43,14 +43,3 @@ qda.class = qda.pred$class
 ## Produce Confusion matrix to check prediction accuracy
 table(qda.class, Direction.2005)
 qda_test_error = mean(qda.class != Direction.2005) # test error rate = 40%
-
-
-
-
-
-
-
-
-
-
-

@@ -71,38 +71,3 @@ mean(glm.pred != Direction.2005) # test error rate = 44%, this confusion matrix 
 
 ## Predict the returns associated with particular values of "Lag" 
 predict(glm.fit, newdata = data.frame(Lag1 = c(1.2, 1.5), Lag2 = c(1.1, -0.8)), type = "response")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
