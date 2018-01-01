@@ -4,11 +4,11 @@
 library(MASS)
 library(ISLR)
 attach(Boston)
-lm.fit = lm(medv ~ lstat + age, data = Boston) # fit all variables
+lm.fit = lm(medv ~ lstat + age, data = Boston) 
 summary(lm.fit)
 
 ## MLR on all variables
-lm.fit = lm(medv ~., data = Boston) 
+lm.fit = lm(medv ~., data = Boston) # fit all variables
 summary(lm.fit)
 summary(lm.fit)$r.sq # R-squared
 summary(lm.fit)$sigma # RSE 
@@ -17,7 +17,7 @@ summary(lm.fit)$sigma # RSE
 library(car)
 vif(lm.fit) # compute VIF
 
-## MLR on all variables and exclude subset of th variables
+## MLR on all variables and exclude subset of the variables
 lm.fit1 = lm(medv~. -age, data = Boston) # fit all variables but exclude age variable 
 summary(lm.fit1)
 lm.fit1 = update(lm.fit, ~. -age) # can also update current linear model
